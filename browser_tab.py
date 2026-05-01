@@ -1,14 +1,15 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QToolBar
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QToolBar, QToolButton
 from PyQt6.QtWebEngineWidgets import QWebEngineView
-
 from PyQt6.QtCore import QUrl
 from PyQt6.QtGui import QAction
 
 
 class BrowserTab(QWidget):
-    def __init__(self, url: str, parent=None):
+    def __init__(self, url: str, favorites_manager=None, on_favorite_added=None, parent=None):
         super().__init__(parent)
         self.url = url
+        self._favorites_manager = favorites_manager
+        self._on_favorite_added = on_favorite_added
         self._setup_ui()
         self.browser.setUrl(QUrl(url))
 
@@ -36,5 +37,19 @@ class BrowserTab(QWidget):
         refresh_action.triggered.connect(self.browser.reload)
         toolbar.addAction(refresh_action)
 
+        if self._favorites_manager:
+            fav_action = QAction("⭐", self)
+            fav_action.setToolTip("收藏当前页面")
+            fav_action.triggered.connect(self._add_current_to_favorites)
+            toolbar.addAction(fav_action)
+
         layout.addWidget(toolbar)
         layout.addWidget(self.browser)
+
+    def _add_current_to_favorites(self):
+        title = self.browser.page().title()
+        url = self.browser.url().toString()
+        if url and self._favorites_manager:
+            self._favorites_manager.add(title or url, url)
+            if self._on_favorite_added:
+                self._on_favorite_added()

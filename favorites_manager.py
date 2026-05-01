@@ -1,12 +1,19 @@
 import json
+import sys
 import uuid
 from datetime import datetime
 from pathlib import Path
 
 
+def _get_data_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).parent
+    return Path(__file__).parent
+
+
 class FavoritesManager:
     def __init__(self, data_file="favorites.json"):
-        self.data_file = Path(__file__).parent / data_file
+        self.data_file = _get_data_dir() / data_file
         self._ensure_file()
 
     def _ensure_file(self):

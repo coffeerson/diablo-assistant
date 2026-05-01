@@ -6,7 +6,6 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtCore import QUrl, Qt
-from favorites_manager import FavoritesManager
 
 
 class FavoriteDialog(QDialog):
@@ -39,10 +38,13 @@ class FavoriteDialog(QDialog):
 
 
 class FavoritesTab(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, favorites_manager, parent=None):
         super().__init__(parent)
-        self.manager = FavoritesManager()
+        self.manager = favorites_manager
         self._setup_ui()
+        self._load_favorites()
+
+    def refresh(self):
         self._load_favorites()
 
     def _setup_ui(self):
