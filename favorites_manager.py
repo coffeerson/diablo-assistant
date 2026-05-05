@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 
-def _get_data_dir() -> Path:
+def get_data_dir() -> Path:
     if getattr(sys, "frozen", False):
         return Path(sys.executable).parent
     return Path(__file__).parent
@@ -13,7 +13,7 @@ def _get_data_dir() -> Path:
 
 class FavoritesManager:
     def __init__(self, data_file="favorites.json"):
-        self.data_file = _get_data_dir() / data_file
+        self.data_file = get_data_dir() / data_file
         self._ensure_file()
 
     def _ensure_file(self):
