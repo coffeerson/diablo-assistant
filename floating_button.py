@@ -1,12 +1,18 @@
 import json
+import math
 from PyQt6.QtWidgets import QPushButton, QApplication, QMenu
-from PyQt6.QtCore import Qt, QPoint
-from PyQt6.QtGui import QMouseEvent, QAction
+from PyQt6.QtCore import Qt, QPoint, QRectF
+from PyQt6.QtGui import (
+    QMouseEvent, QAction, QIcon, QPixmap, QPainter, QPen,
+    QColor, QPainterPath,
+)
 from main_window import MainWindow
 from favorites_manager import get_data_dir
 
 SETTINGS_FILE = "settings.json"
 DRAG_THRESHOLD = 5
+BTN_SIZE = 36
+ICON_SIZE = 30
 
 
 def _settings_path():
@@ -28,6 +34,49 @@ def _save_position(x: int, y: int):
         json.dump(data, f)
 
 
+def _make_diablo_icon() -> QIcon:
+    pixmap = QPixmap(ICON_SIZE, ICON_SIZE)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    p = QPainter(pixmap)
+    p.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+    # Dark background
+    bg = QRectF(1, 1, ICON_SIZE - 2, ICON_SIZE - 2)
+    p.setBrush(QColor("#1a0000"))
+    p.setPen(QPen(QColor("#FFD700"), 1.5))
+    p.drawRoundedRect(bg, 3, 3)
+
+    # Five-pointed star
+    cx, cy = ICON_SIZE / 2.0, ICON_SIZE / 2.0
+    outer_r = 10.0
+    inner_r = 3.8
+
+    star_path = QPainterPath()
+    for i in range(5):
+        ao = math.radians(-90 + i * 72)
+        ox, oy = cx + outer_r * math.cos(ao), cy + outer_r * math.sin(ao)
+        ai = math.radians(-90 + 36 + i * 72)
+        ix, iy = cx + inner_r * math.cos(ai), cy + inner_r * math.sin(ai)
+        if i == 0:
+            star_path.moveTo(ox, oy)
+        else:
+            star_path.lineTo(ox, oy)
+        star_path.lineTo(ix, iy)
+    star_path.closeSubpath()
+
+    p.setBrush(QColor("#FFD700"))
+    p.setPen(QPen(QColor("#DAA520"), 0.5))
+    p.drawPath(star_path)
+
+    # Tiny center dot
+    p.setBrush(Qt.BrushStyle.NoBrush)
+    p.setPen(QPen(QColor("#FFD700"), 0.5))
+    p.drawEllipse(QPointF(cx, cy), 1.5, 1.5)
+
+    p.end()
+    return QIcon(pixmap)
+
+
 class FloatingButton(QPushButton):
     def __init__(self):
         super().__init__()
@@ -42,33 +91,28 @@ class FloatingButton(QPushButton):
             | Qt.WindowType.Tool
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
-        self.setFixedSize(60, 60)
-        self.setText("💀")
+        self.setFixedSize(BTN_SIZE, BTN_SIZE)
+        self.setIcon(_make_diablo_icon())
+        self.setIconSize(self.size())
         self.setStyleSheet("""
             QPushButton {
-                background-color: #8B0000;
-                color: #FFD700;
-                border: 2px solid #6B0000;
-                border-radius: 30px;
-                font-size: 24px;
+                background-color: #1a1a1a;
+                border: none;
+                border-radius: 3px;
             }
             QPushButton:hover {
-                background-color: #A00000;
-                border-color: #FFD700;
-            }
-            QPushButton:pressed {
-                background-color: #6B0000;
+                background-color: #2a2a2a;
             }
         """)
         self.setToolTip("暗黑破坏神助手 — 左键打开 右键菜单")
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
-        # Restore saved position or use default
         saved_x, saved_y = _load_position()
         if saved_x is not None and saved_y is not None:
             self.move(saved_x, saved_y)
         else:
             screen = QApplication.primaryScreen().availableGeometry()
-            self.move(screen.width() - 80, screen.height() // 2 - 30)
+            self.move(screen.width() - 60, screen.height() // 2 - 18)
 
     # ── click vs drag ──────────────────────────────────────────────
 
@@ -103,12 +147,8 @@ class FloatingButton(QPushButton):
             QMenu { background-color: #2d2d2d; color: #c0c0c0; border: 1px solid #3a3a3a; }
             QMenu::item:selected { background-color: #8B0000; color: #FFD700; }
         """)
-
-        quit_action = menu.addAction("退出")
-        action = menu.exec(event.globalPos())
-
-        if action == quit_action:
-            QApplication.instance().quit()
+        menu.addAction("退出").triggered.connect(lambda: QApplication.instance().quit())
+        menu.exec(event.globalPos())
 
     # ── window toggle ──────────────────────────────────────────────
 
