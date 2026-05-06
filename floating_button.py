@@ -1,7 +1,7 @@
 import json
 import math
 from PyQt6.QtWidgets import QPushButton, QApplication, QMenu
-from PyQt6.QtCore import Qt, QPoint, QRectF
+from PyQt6.QtCore import Qt, QPoint, QPointF, QRectF
 from PyQt6.QtGui import (
     QMouseEvent, QAction, QIcon, QPixmap, QPainter, QPen,
     QColor, QPainterPath,
